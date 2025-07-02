@@ -9,10 +9,12 @@ if not hasattr(st, 'chat_message'):
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from chat.chat import chat_with_llm
 
-st.title("🧠 LLM Chatbot (via Ollama API)")
+st.title("American History Chatbot")
 
 if "history" not in st.session_state:
-    st.session_state.history = []
+    st.session_state.history = [
+        {"role": "assistant", "content": "Ask me anything related to American History"}
+    ]
 if "user_input_value" not in st.session_state: # New session state variable to control input field's value
     st.session_state.user_input_value = ""
 

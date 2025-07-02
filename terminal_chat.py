@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from chat.chat import chat_with_llm
 
 def main():
-    print("💬 Terminal Chatbot (via Ollama API). Type 'exit' to quit.\n")
+    print("💬 Terminal Chatbot: \n What can I help you with today? Ask me any question about American History \n Type 'exit' to quit.\n")
     history = []
 
     while True:
