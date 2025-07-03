@@ -98,3 +98,6 @@ TinyLlama: Hello! How can I assist you today?
 ```
 streamlit run streamlit_chat/streamlit_chat.py
 ```
+
+extract text from pdfs: 
+python pdf_extractor.py Civil-War-essay.pdf
