@@ -1,16 +1,11 @@
 import fitz  # PyMuPDF
+import streamlit as st
+import tempfile
 import os
 from typing import List, Dict
 
 
 def extract_text_by_page(pdf_path: str) -> List[Dict]:
-    """
-    Extracts text from a PDF, returns a list of dicts:
-    [{page_num, text, filename}]
-    """
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"File not found: {pdf_path}")
-    
     doc = fitz.open(pdf_path)
     filename = os.path.basename(pdf_path)
     pages = []
@@ -22,14 +17,11 @@ def extract_text_by_page(pdf_path: str) -> List[Dict]:
             "page_number": i + 1,
             "text": page_text.strip()
         })
-    
+
     return pages
 
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 100) -> List[str]:
-    """
-    Splits text into overlapping chunks (for embeddings).
-    """
     words = text.split()
     chunks = []
     start = 0
@@ -38,16 +30,12 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 100) -> List[str
         end = start + chunk_size
         chunk = words[start:end]
         chunks.append(" ".join(chunk))
-        start += chunk_size - overlap  # move forward with overlap
+        start += chunk_size - overlap
 
     return chunks
 
 
 def extract_pdf_chunks(pdf_path: str, chunk_size=500, overlap=100) -> List[Dict]:
-    """
-    Main function: Extracts, chunks, and adds metadata.
-    Returns: List with filename, page, chunk_id, and text.
-    """
     page_data = extract_text_by_page(pdf_path)
     all_chunks = []
 
@@ -63,16 +51,37 @@ def extract_pdf_chunks(pdf_path: str, chunk_size=500, overlap=100) -> List[Dict]
 
     return all_chunks
 
-if __name__ == "__main__":
-    import sys
-    import json
 
-    if len(sys.argv) < 2:
-        print("Usage: python pdf_extractor_backend.py <path_to_pdf>")
-        sys.exit(1)
+# ---------------- Streamlit UI ---------------- #
 
-    pdf_path = sys.argv[1]
-    chunks = extract_pdf_chunks(pdf_path)
+st.title("📄 PDF Reader")
 
-    # Print a preview (first 2 chunks)
-    print(json.dumps(chunks[:2], indent=2))
+# Sidebar controls
+st.sidebar.header("🧩 Chunk Settings")
+chunk_size = st.sidebar.slider("Chunk size (words)", min_value=100, max_value=1000, value=500, step=50)
+overlap = st.sidebar.slider("Overlap size (words)", min_value=0, max_value=500, value=100, step=25)
+
+# File upload
+uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+
+if uploaded_file is not None:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        tmp_path = tmp_file.name
+
+    st.success("✅ PDF uploaded successfully!")
+    st.info(f"Extracting and chunking text (chunk size: {chunk_size}, overlap: {overlap})...")
+
+    try:
+        chunks = extract_pdf_chunks(tmp_path, chunk_size, overlap)
+        st.success(f"✅ Extracted {len(chunks)} chunks from {uploaded_file.name}.")
+
+        # Show preview
+        st.subheader("Preview of Extracted Chunks:")
+        for chunk in chunks[:5]:
+            st.markdown(f"**Page {chunk['page_number']} | Chunk {chunk['chunk_id']}**")
+            st.text(chunk['text'])
+            st.divider()
+
+    except Exception as e:
+        st.error(f"❌ Error: {e}")

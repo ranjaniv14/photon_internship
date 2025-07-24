@@ -84,13 +84,6 @@ ollama pull tinyllama
 - Run the chatbot script:
 ```
 python terminal_chat/terminal_chat.py
-```
-- Example session:
-
-Chat with TinyLlama! Type 'exit' to quit.
-
-You: Hello, TinyLlama!
-TinyLlama: Hello! How can I assist you today?
 
 ## ▶️ Run the Chatbot via Streamlit App
 
@@ -100,4 +93,11 @@ streamlit run streamlit_chat/streamlit_chat.py
 ```
 
 extract text from pdfs: 
-python pdf_extractor.py Civil-War-essay.pdf
+streamlit run pdf_extractor.py
+streamlit run embed_pdf.py
+streamlit run pdf_reader.py
+
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install streamlit pymupdf sentence-transformers psycopg2-binary sqlalchemy pgvector
