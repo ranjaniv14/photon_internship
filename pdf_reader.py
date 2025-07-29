@@ -8,6 +8,25 @@ from sqlalchemy import create_engine, text
 from pgvector.sqlalchemy import Vector
 import requests
 
+from collections import Counter
+import re
+
+def summarize_document(chunks: List[tuple]):
+    all_text = " ".join(chunk[2] for chunk in chunks)  # chunk[2] is the text
+    words = re.findall(r'\b\w+\b', all_text.lower())
+    stopwords = set([
+        "the", "and", "to", "of", "a", "in", "for", "on", "with", "is", "that", "by", "this",
+        "as", "are", "at", "an", "be", "from", "or", "it", "which", "but", "has", "have"
+    ])
+    filtered_words = [w for w in words if w not in stopwords and len(w) > 2]
+    word_counts = Counter(filtered_words)
+    top_terms = word_counts.most_common(10)
+
+    prompt = f"Summarize this document in 5 sentences:\n{all_text[:3000]}"
+    summary = get_ollama_response(prompt)
+    return top_terms, summary
+
+
 # ---------------- Settings ---------------- #
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # 384-dim
 DB_URL = os.getenv("DB_URL") or "postgresql://ranjanivenkataraman:yourpassword@localhost:5432/pdfdb"
@@ -117,6 +136,15 @@ if uploaded_file:
 
     st.info("Processing and embedding PDF chunks...")
     chunks = embed_and_store_chunks(tmp_path, chunk_size, overlap)
+    top_terms, summary = summarize_document(chunks)
+
+    st.subheader("🧠 PDF Summary")
+    st.markdown(summary)
+
+    st.subheader("🔤 Most Frequent Terms")
+    for term, freq in top_terms:
+        st.markdown(f"- **{term}**: {freq} times")
+
     st.success(f"✅ Stored {len(chunks)} chunks from {uploaded_file.name} into PostgreSQL.")
 
     st.subheader("Sample Extracted Chunks:")
