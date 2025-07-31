@@ -90,47 +90,6 @@ def get_ollama_response(prompt: str, model: str = "llama3") -> str:
         return response.json()["response"]
     except requests.exceptions.RequestException as e:
         return f"Error contacting Ollama: {str(e)}"
-    
-# def chunk_list(lst, n):
-#     """Split list into chunks of size n"""
-#     for i in range(0, len(lst), n):
-#         yield lst[i:i + n]
-
-# def hierarchical_summarize(all_chunks, group_size=5):
-#     # Summarize each group of chunks
-#     intermediate_summaries = []
-#     for group in chunk_list(all_chunks, group_size):
-#         context = "\n\n".join([chunk[2] for chunk in group])
-#         prompt = f"""Summarize the main content of the following document chunk:
-
-# {context}
-
-# Provide a concise summary.
-# """
-#         summary = get_ollama_response(prompt)
-#         intermediate_summaries.append(summary)
-
-#     # Summarize the summaries to get the final summary
-#     final_context = "\n\n".join(intermediate_summaries)
-#     final_prompt = f"""Summarize the following summaries into one concise summary:
-
-# {final_context}
-
-# Provide a concise summary.
-# """
-#     final_summary = get_ollama_response(final_prompt)
-#     return final_summary
-
-
-# def get_frequent_terms(text: str, top_n: int = 10):
-#     words = re.findall(r'\b\w+\b', text.lower())
-#     stopwords = set([
-#         "the", "and", "a", "of", "in", "to", "is", "with", "on", "for", "that",
-#         "by", "this", "it", "as", "at", "an", "be", "are", "from", "or"
-#     ])
-#     filtered = [w for w in words if w not in stopwords and len(w) > 2]
-#     counter = Counter(filtered)
-#     return counter.most_common(top_n)
 
 # ---------------- Streamlit UI ---------------- #
 
@@ -151,22 +110,12 @@ if uploaded_file:
     chunks = embed_and_store_chunks(tmp_path, chunk_size, overlap)
     st.success(f"✅ Stored {len(chunks)} chunks from {uploaded_file.name}.")
 
-    #title = chunks[0][3] if chunks else "Unknown Title"
     full_text = " ".join(chunk[2] for chunk in chunks)
     total_words = len(full_text.split())
-    #frequent_terms = get_frequent_terms(full_text)
 
     st.subheader("📊 Document Summary")
-    #st.markdown(f"- **Title:** {title}")
     st.markdown(f"- **Total Chunks:** {len(chunks)}")
     st.markdown(f"- **Estimated Word Count:** {total_words}")
-
-    #st.markdown("**🔑 Top Frequent Terms:**")
-    #st.write({term: count for term, count in frequent_terms})
-
-    #st.markdown("📝 **AI-Generated Summary:**")
-    #summary = hierarchical_summarize(chunks[:5])  # Use top 5 chunks for summary
-    #st.markdown(summary)
 
     st.subheader("Sample Extracted Chunks:")
     for page_num, chunk_id, chunk_text_content, _ in chunks[:5]:
