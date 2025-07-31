@@ -95,11 +95,18 @@ def search_similar_chunks(query: str, top_k: int = 5):
         results = conn.execute(sql, {"query_emb": query_emb, "top_k": top_k})
         return list(results)
 
-def build_context_prompt(query: str, chunks: List) -> str:
+def build_context_prompt(query: str, chunks: List, personality:str) -> str:
     context = "\n\n".join([row.text for row in chunks])
-    prompt = f"""You are a helpful assistant. You are a witty, sarcastic AI assistant who answers questions with humor, but still provides accurate and well-researched information.  
-Keep the sarcasm light and friendly—think roast comedian meets high school history teacher. Use the following context to answer the question as accurately as possible.
+    if personality == "Sarcastic":
+        persona_intro = "You are a witty, sarcastic AI assistant who answers questions with humor, but still provides accurate and well-researched information. Think roast comedian meets high school history teacher."
+    elif personality == "Academic":
+        persona_intro = "You're a formal, scholarly AI assistant who provides concise and citation-style explanations. Think academic and professional"
+    else:
+        persona_intro = "You're a relaxed, relatable AI who chats like a helpful friend explaining things casually."
 
+    prompt = f"""{persona_intro}
+Use the following context to answer the question as accurately as possible.
+    
 Context:
 {context}
 
@@ -127,6 +134,17 @@ st.sidebar.header("🧩 Chunking")
 chunk_size = st.sidebar.slider("Chunk size (words)", 100, 1000, 500, step=50)
 overlap = st.sidebar.slider("Overlap (words)", 0, 300, 100, step=25)
 
+st.sidebar.header("🧠 Chatbot Personality")
+personality = st.sidebar.selectbox(
+    "Choose a personality:",
+    [
+        "Sarcastic",
+        "Academic",
+        "Casual"
+    ]
+)
+
+
 uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
 
 if uploaded_file:
@@ -147,11 +165,11 @@ if uploaded_file:
 
     st.success(f"✅ Stored {len(chunks)} chunks from {uploaded_file.name} into PostgreSQL.")
 
-    st.subheader("Sample Extracted Chunks:")
-    for page_num, chunk_id, chunk_text_content in chunks[:5]:
-        st.markdown(f"**Page {page_num} | Chunk {chunk_id}**")
-        st.text(chunk_text_content)
-        st.divider()
+    # st.subheader("Sample Extracted Chunks:")
+    # for page_num, chunk_id, chunk_text_content in chunks[:5]:
+    #     st.markdown(f"**Page {page_num} | Chunk {chunk_id}**")
+    #     st.text(chunk_text_content)
+    #     st.divider()
 
 # Search + RAG Section
 st.subheader("🔍 Ask a question about the PDF")
@@ -163,7 +181,7 @@ if query:
     if not top_chunks:
         st.warning("No relevant chunks found.")
     else:
-        prompt = build_context_prompt(query, top_chunks)
+        prompt = build_context_prompt(query, top_chunks, personality)
         st.info("Searching...")
         answer = get_ollama_response(prompt)
 
